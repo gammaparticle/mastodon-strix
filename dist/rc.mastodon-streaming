@@ -10,7 +10,7 @@ if [ -r /etc/default/mastodon-streaming ]; then
   . /etc/default/mastodon-streaming
 fi
 
-# Get Sidekiq's main pid
+# Get Streaming's main pid
 get_main_pid() {
   STREAMPID=`ps -ef|grep -v grep | grep "\-c /usr/bin/node ./streaming" | awk '{print $2}'`
 }
@@ -22,13 +22,11 @@ streaming_start() {
   echo "Streaming pid is: $STREAMPID"
 }
 
-
 streaming_stop() {
    get_main_pid
    echo "Killing pid: $STREAMPID"
   /bin/kill -SIGTERM $STREAMPID
 }
-
 
 case "$1" in
 'start')
