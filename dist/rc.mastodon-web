@@ -1,0 +1,50 @@
+#!/bin/sh
+# Start/stop/restart the Mastodon Web service
+#
+
+# Set user
+user=mastodon
+
+# Source options
+if [ -r /etc/default/mastodon-web ]; then
+  . /etc/default/mastodon-web
+fi
+
+# Get mastodon-web's main pid
+get_main_pid() {
+  WEBPID=`ps -ef|grep -v grep | grep "exec puma"| awk '{print $2}'`
+}
+
+web_start() {
+  cd /home/mastodon/live
+  /bin/su -s /bin/bash $user -c "/home/mastodon/.rbenv/shims/bundle exec puma -C config/puma.rb" >> /var/log/mastodon/web.log 2>&1 &
+  get_main_pid
+  echo "Web pid is: $WEBPID"
+}
+
+
+web_stop() {
+  get_main_pid
+  echo "Killing web pid: $WEBPID"
+  /bin/kill -SIGTERM $WEBPID
+}
+
+
+web_restart() {
+  /bin/kill -SIGUSR1 $WEBPID
+}
+
+
+case "$1" in
+'start')
+  web_start
+  ;;
+'stop')
+  web_stop
+  ;;
+'restart')
+  web_restart
+  ;;
+*)
+  echo "usage $0 start|stop|restart"
+esac

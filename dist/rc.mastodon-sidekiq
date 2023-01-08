@@ -1,0 +1,52 @@
+#!/bin/sh
+# Start/stop/restart the Mastodon Sidekiq service
+#
+
+# Set user
+user=mastodon
+
+# Source options
+if [ -r /etc/default/mastodon-sidekiq ]; then
+  . /etc/default/mastodon-sidekiq
+fi
+
+# Get Sidekiq's main pid
+get_main_pid() {
+  SIDEKIQPID=`ps -ef|grep "exec sidekiq" | grep -v grep |awk '{print $2}'`
+}
+
+
+sidekiq_start() {
+  cd /home/mastodon/live
+  /bin/su -s /bin/bash $user -c "/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 25" >> /var/log/mastodon/sidekiq.log 2>&1 &
+  get_main_pid
+  echo "Sidekiq pid is: $SIDEKIQPID"
+}
+
+
+sidekiq_stop() {
+  get_main_pid
+  echo "Killing sidekiq pid: $SIDEKIQPID"
+  /bin/kill -SIGTERM $SIDEKIQPID
+}
+
+
+sidekiq_restart() {
+  get_main_pid
+  /bin/kill -SIGUSR1 $SIDEKIQPID
+}
+
+
+case "$1" in
+'start')
+  sidekiq_start
+  ;;
+'stop')
+  sidekiq_stop
+  ;;
+'restart')
+  sidekiq_restart
+  ;;
+*)
+  echo "usage $0 start|stop|restart"
+esac

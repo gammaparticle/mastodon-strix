@@ -1,0 +1,42 @@
+#!/bin/sh
+# Start/stop/restart the Mastodon Streaming service
+#
+
+# Set user
+user=mastodon
+
+# Source options
+if [ -r /etc/default/mastodon-streaming ]; then
+  . /etc/default/mastodon-streaming
+fi
+
+# Get Sidekiq's main pid
+get_main_pid() {
+  STREAMPID=`ps -ef|grep -v grep | grep "\-c /usr/bin/node ./streaming" | awk '{print $2}'`
+}
+
+streaming_start() {
+  cd /home/mastodon/live
+  /bin/su -s /bin/bash $user -c "/usr/bin/node ./streaming" >> /var/log/mastodon/streaming.log 2>&1 &
+  get_main_pid
+  echo "Streaming pid is: $STREAMPID"
+}
+
+
+streaming_stop() {
+   get_main_pid
+   echo "Killing pid: $STREAMPID"
+  /bin/kill -SIGTERM $STREAMPID
+}
+
+
+case "$1" in
+'start')
+  streaming_start
+  ;;
+'stop')
+  streaming_stop
+  ;;
+*)
+  echo "usage $0 start|stop"
+esac
